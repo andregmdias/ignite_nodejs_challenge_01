@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const {format} = require('date-fns');
 
 const {v4: uuidv4} = require('uuid');
 
@@ -10,17 +11,19 @@ app.use(express.json());
 
 const users = [];
 
-function checksExistsUserAccount(request, response, next) {
-  const { username } = request.headers;
-  
-  const user = users.find((user) => user.username === username);
-  
+const checksExistsUserAccount = (request, response, next) => {
+  const {username} = request.headers;
+
+  const fetchUser = users.find((user) => user.username === username);
+
   if (!user) {
     return response.status(404).json({error: "User does not exist !"})
   }
-  
+
+  request.user = fetchUser;
+
   return next();
-}
+};
 
 app.post('/users', (request, response) => {
   const {name, username} = request.body;
@@ -31,14 +34,27 @@ app.post('/users', (request, response) => {
     username,
     todos: [],
   });
+  
+  return response.status(201).send();
 });
 
 app.get('/todos', checksExistsUserAccount, (request, response) => {
-  
+  const { user } = request;
+
+  return response.status(201).json(user.todos);
 });
 
 app.post('/todos', checksExistsUserAccount, (request, response) => {
-  // Complete aqui
+  const {user} = request;
+  const {title, deadline} = request.body;
+
+  user.todos.push({
+    id: uuidv4,
+    title,
+    deadline,
+    created_at_at:new Date()
+  });
+
 });
 
 app.put('/todos/:id', checksExistsUserAccount, (request, response) => {
@@ -54,3 +70,5 @@ app.delete('/todos/:id', checksExistsUserAccount, (request, response) => {
 });
 
 module.exports = app;
+
+app.listen(3333);
