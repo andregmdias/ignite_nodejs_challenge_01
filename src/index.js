@@ -25,12 +25,7 @@ const checksExistsUserAccount = (request, response, next) => {
 };
 
 const findUserTodo = ((user, id) =>  {
-  const fetchedTodo = user.todos.find((todo) => todo.id === id);
-  
-  if(!fetchedTodo) {
-    return {error: "Does not exists todo with the given id"}
-  }
-  return fetchedTodo;
+  return fetchedTodo = user.todos.find((todo) => todo.id === id);
 });
 app.post('/users', (request, response) => {
   const {name, username} = request.body;
@@ -40,14 +35,16 @@ app.post('/users', (request, response) => {
     return response.status(400).json({error: "User already exists !"});
   }
 
-  users.push({
+  const newUserData = {
     id: uuid(),
     name,
     username,
     todos: [],
-  });
-
-  return response.status(201).send();
+  }
+  
+  users.push(newUserData);
+  
+  return response.status(201).json(newUserData);
 });
 
 app.get('/todos', checksExistsUserAccount, (request, response) => {
@@ -65,7 +62,7 @@ app.post('/todos', checksExistsUserAccount, (request, response) => {
     title,
     deadline: new Date(deadline),
     done: false,
-    created_at_at: new Date()
+    created_at: new Date()
   }
   user.todos.push(todoData);
 
@@ -79,6 +76,10 @@ app.put('/todos/:id', checksExistsUserAccount, (request, response) => {
   const {title, deadline} = request.body;
 
   const todo = findUserTodo(user, id);
+  
+  if(!todo) {
+    return response.status(404).json({error: "Does not exist any todo with the given id"});  
+  }
   todo.title = title ? title : todo.title;
   todo.deadline = todo.deadline === deadline ? todo.deadline : deadline;
 
@@ -90,6 +91,11 @@ app.patch('/todos/:id/done', checksExistsUserAccount, (request, response) => {
   const {id} = request.params;
 
   const todo = findUserTodo(user, id);
+  
+  if(!todo) {
+    return response.status(404).json({error: "Does not exist any todo with the given id"});
+  }
+  
   todo.done = true;
   
   return response.status(200).json(todo);
@@ -99,6 +105,11 @@ app.delete('/todos/:id', checksExistsUserAccount, (request, response) => {
   const {user} = request;
   const {id} = request.params;
   const fetchedUserTodo = findUserTodo(user, id);
+
+  if(!fetchedUserTodo) {
+    return response.status(404).json({error: "Does not exist any todo with the given id"});
+  }
+  
   user.todos.splice(fetchedUserTodo, 1);
   
   return response.status(204).send();
